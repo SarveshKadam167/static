@@ -1,5 +1,5 @@
 import unittest
-from markdown_blocks import markdown_to_blocks
+from markdown_blocks import markdown_to_blocks, block_to_block_type, BlockType
 
 
 class TestMarkdownToBlocks(unittest.TestCase):
@@ -51,6 +51,83 @@ This is the same paragraph on a new line
             markdown_to_blocks(md),
             ["# Heading", "A paragraph.", "- item one\n- item two"],
         )
+
+
+class TestBlockToBlockType(unittest.TestCase):
+    # headings
+    def test_heading_h1(self):
+        self.assertEqual(block_to_block_type("# Heading"), BlockType.HEADING)
+
+    def test_heading_h3(self):
+        self.assertEqual(block_to_block_type("### Heading"), BlockType.HEADING)
+
+    def test_heading_h6(self):
+        self.assertEqual(block_to_block_type("###### Heading"), BlockType.HEADING)
+
+    def test_heading_too_many_hashes(self):
+        self.assertEqual(block_to_block_type("####### Not a heading"), BlockType.PARAGRAPH)
+
+    def test_heading_no_space(self):
+        self.assertEqual(block_to_block_type("#NoSpace"), BlockType.PARAGRAPH)
+
+    # code
+    def test_code_block(self):
+        self.assertEqual(block_to_block_type("```\nsome code\n```"), BlockType.CODE)
+
+    def test_code_block_with_language(self):
+        self.assertEqual(block_to_block_type("```python\nprint('hi')\n```"), BlockType.CODE)
+
+    def test_code_block_unclosed(self):
+        self.assertEqual(block_to_block_type("```\nsome code"), BlockType.PARAGRAPH)
+
+    # quote
+    def test_quote_single_line(self):
+        self.assertEqual(block_to_block_type(">quote text"), BlockType.QUOTE)
+
+    def test_quote_with_space(self):
+        self.assertEqual(block_to_block_type("> quote text"), BlockType.QUOTE)
+
+    def test_quote_multiline(self):
+        self.assertEqual(block_to_block_type("> line one\n> line two\n> line three"), BlockType.QUOTE)
+
+    def test_quote_missing_marker_on_one_line(self):
+        self.assertEqual(block_to_block_type("> line one\nline two"), BlockType.PARAGRAPH)
+
+    # unordered list
+    def test_unordered_list_single(self):
+        self.assertEqual(block_to_block_type("- item"), BlockType.UNORDERED_LIST)
+
+    def test_unordered_list_multiple(self):
+        self.assertEqual(block_to_block_type("- first\n- second\n- third"), BlockType.UNORDERED_LIST)
+
+    def test_unordered_list_missing_space(self):
+        self.assertEqual(block_to_block_type("-item"), BlockType.PARAGRAPH)
+
+    def test_unordered_list_mixed_markers(self):
+        self.assertEqual(block_to_block_type("- first\n* second"), BlockType.PARAGRAPH)
+
+    # ordered list
+    def test_ordered_list_single(self):
+        self.assertEqual(block_to_block_type("1. item"), BlockType.ORDERED_LIST)
+
+    def test_ordered_list_multiple(self):
+        self.assertEqual(block_to_block_type("1. first\n2. second\n3. third"), BlockType.ORDERED_LIST)
+
+    def test_ordered_list_wrong_start(self):
+        self.assertEqual(block_to_block_type("2. first\n3. second"), BlockType.PARAGRAPH)
+
+    def test_ordered_list_skipped_number(self):
+        self.assertEqual(block_to_block_type("1. first\n3. third"), BlockType.PARAGRAPH)
+
+    def test_ordered_list_missing_space(self):
+        self.assertEqual(block_to_block_type("1.item\n2.item"), BlockType.PARAGRAPH)
+
+    # paragraph
+    def test_paragraph(self):
+        self.assertEqual(block_to_block_type("Just a normal paragraph."), BlockType.PARAGRAPH)
+
+    def test_paragraph_multiline(self):
+        self.assertEqual(block_to_block_type("line one\nline two"), BlockType.PARAGRAPH)
 
 
 if __name__ == "__main__":
