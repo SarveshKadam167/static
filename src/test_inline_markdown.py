@@ -4,6 +4,7 @@ from inline_markdown import (
     split_nodes_delimiter,
     split_nodes_image,
     split_nodes_link,
+    text_to_textnodes,
     extract_markdown_images,
     extract_markdown_links,
 )
@@ -275,6 +276,84 @@ class TestSplitNodesLink(unittest.TestCase):
         link_nodes = [n for n in result if n.text_type == TextType.LINK]
         self.assertEqual(len(link_nodes), 1)
         self.assertEqual(link_nodes[0].text, "link")
+
+
+class TestTextToTextNodes(unittest.TestCase):
+    def test_all_types(self):
+        text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        self.assertListEqual(
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("text", TextType.BOLD),
+                TextNode(" with an ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" word and a ", TextType.TEXT),
+                TextNode("code block", TextType.CODE),
+                TextNode(" and an ", TextType.TEXT),
+                TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+                TextNode(" and a ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://boot.dev"),
+            ],
+            text_to_textnodes(text),
+        )
+
+    def test_plain_text(self):
+        self.assertListEqual(
+            [TextNode("just plain text", TextType.TEXT)],
+            text_to_textnodes("just plain text"),
+        )
+
+    def test_bold_only(self):
+        self.assertListEqual(
+            [TextNode("bold", TextType.BOLD)],
+            text_to_textnodes("**bold**"),
+        )
+
+    def test_italic_only(self):
+        self.assertListEqual(
+            [TextNode("italic", TextType.ITALIC)],
+            text_to_textnodes("_italic_"),
+        )
+
+    def test_code_only(self):
+        self.assertListEqual(
+            [TextNode("code", TextType.CODE)],
+            text_to_textnodes("`code`"),
+        )
+
+    def test_image_only(self):
+        self.assertListEqual(
+            [TextNode("alt", TextType.IMAGE, "https://example.com/img.png")],
+            text_to_textnodes("![alt](https://example.com/img.png)"),
+        )
+
+    def test_link_only(self):
+        self.assertListEqual(
+            [TextNode("boot dev", TextType.LINK, "https://boot.dev")],
+            text_to_textnodes("[boot dev](https://boot.dev)"),
+        )
+
+    def test_multiple_bold(self):
+        result = text_to_textnodes("**a** and **b**")
+        self.assertListEqual(
+            [
+                TextNode("a", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("b", TextType.BOLD),
+            ],
+            result,
+        )
+
+    def test_bold_and_italic(self):
+        result = text_to_textnodes("**bold** and _italic_")
+        self.assertListEqual(
+            [
+                TextNode("bold", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+            ],
+            result,
+        )
 
 
 class TestExtractMarkdownImages(unittest.TestCase):
