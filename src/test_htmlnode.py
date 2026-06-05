@@ -1,5 +1,6 @@
 import unittest
 from htmlnode import HTMLNode
+from leafnode import LeafNode
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -34,6 +35,41 @@ class TestHTMLNode(unittest.TestCase):
     def test_repr(self):
         node = HTMLNode("p", "hello", None, {"class": "intro"})
         self.assertEqual(repr(node), "HTMLNode(p, hello, None, {'class': 'intro'})")
+
+
+class TestLeafNode(unittest.TestCase):
+    def test_leaf_to_html_p(self):
+        node = LeafNode("p", "Hello, world!")
+        self.assertEqual(node.to_html(), "<p>Hello, world!</p>")
+
+    def test_leaf_to_html_a(self):
+        node = LeafNode("a", "Click me!", {"href": "https://www.google.com"})
+        self.assertEqual(node.to_html(), '<a href="https://www.google.com">Click me!</a>')
+
+    def test_leaf_to_html_no_tag(self):
+        node = LeafNode(None, "raw text")
+        self.assertEqual(node.to_html(), "raw text")
+
+    def test_leaf_to_html_bold(self):
+        node = LeafNode("b", "bold text")
+        self.assertEqual(node.to_html(), "<b>bold text</b>")
+
+    def test_leaf_to_html_img(self):
+        node = LeafNode("img", "", {"src": "image.png", "alt": "a photo"})
+        self.assertEqual(node.to_html(), '<img src="image.png" alt="a photo"></img>')
+
+    def test_leaf_no_value_raises(self):
+        node = LeafNode("p", None)
+        with self.assertRaises(ValueError):
+            node.to_html()
+
+    def test_leaf_no_children(self):
+        node = LeafNode("span", "text")
+        self.assertIsNone(node.children)
+
+    def test_leaf_repr(self):
+        node = LeafNode("a", "click", {"href": "https://boot.dev"})
+        self.assertEqual(repr(node), "LeafNode(a, click, {'href': 'https://boot.dev'})")
 
 
 if __name__ == "__main__":
